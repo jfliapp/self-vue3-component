@@ -74,7 +74,7 @@ function createComponentInstance(vnode) {
   return component;
 }
 function setupComponent(instance) {
-  console.log(instance, 'instance')
+  console.log(instance, "instance");
   initProps(instance, instance.vnode.props);
   initSlots(instance, instance.vnode.children);
   setupStatefulComponent(instance);
@@ -88,16 +88,16 @@ function initSlots(instance, children) {
   // 这一块是编译那边做的的事 单个值也是 就是默认default。 数组不做处理先了
   // 所以 这里就默认传进来的都是对象  这里就i默认做 作用域插槽了
   // 带有name的
-  let slot = {}
-  console.log(children, 'childre==========')
+  let slot = {};
+  console.log(children, "childre==========");
   // 这里需要注意 第一次app的时候他是没有 children的
-  if(children) {
+  if (children) {
     Object.entries(children).forEach(([key, value]) => {
-      slot[key] = value
-    })
+      slot[key] = value;
+    });
   }
-  console.log(slot, 'slot-------------initSlots')
-  instance.slots = slot
+  console.log(slot, "slot-------------initSlots");
+  instance.slots = slot;
 }
 function setupStatefulComponent(instance) {
   const { props } = instance;
