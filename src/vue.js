@@ -63,27 +63,44 @@ function createComponentInstance(vnode) {
     type: vnode.type,
     setupResult: {},
     props: {},
-    emit: () => {}
+    slots: {},
+    emit: () => {},
   };
   component.emit = (name, args) => {
-    const handlerName = 'on' + name.slice(0, 1).toUpperCase() + name.slice(1);
-    const handler = component.props[handlerName]
-    handler(args)
-  }
+    const handlerName = "on" + name.slice(0, 1).toUpperCase() + name.slice(1);
+    const handler = component.props[handlerName];
+    handler(args);
+  };
   return component;
 }
 function setupComponent(instance) {
-  // TODO:
-  initProps(instance,instance.vnode.props)
-  // initSlot()
+  console.log(instance, 'instance')
+  initProps(instance, instance.vnode.props);
+  initSlots(instance, instance.vnode.children);
   setupStatefulComponent(instance);
 }
 
 function initProps(instance, props) {
   instance.props = props;
 }
+function initSlots(instance, children) {
+  // 这个children 可以是单个值 数组 左右域
+  // 这一块是编译那边做的的事 单个值也是 就是默认default。 数组不做处理先了
+  // 所以 这里就默认传进来的都是对象  这里就i默认做 作用域插槽了
+  // 带有name的
+  let slot = {}
+  console.log(children, 'childre==========')
+  // 这里需要注意 第一次app的时候他是没有 children的
+  if(children) {
+    Object.entries(children).forEach(([key, value]) => {
+      slot[key] = value
+    })
+  }
+  console.log(slot, 'slot-------------initSlots')
+  instance.slots = slot
+}
 function setupStatefulComponent(instance) {
-  const { props} = instance
+  const { props } = instance;
   const component = instance.type;
   instance.proxy = new Proxy(
     {},
@@ -99,6 +116,9 @@ function setupStatefulComponent(instance) {
         if (key === "$el") {
           return instance.vnode.el;
         }
+        if (key === "$slots") {
+          return instance.slots;
+        }
       },
       set(target, key, value) {
         const setupResult = instance.setupResult;
@@ -111,7 +131,7 @@ function setupStatefulComponent(instance) {
   );
   const setup = component.setup;
   if (setup) {
-    const setupResult = setup(instance.props, {emit: instance.emit});
+    const setupResult = setup(instance.props, { emit: instance.emit });
     handleSetupResult(instance, setupResult);
   }
 }
