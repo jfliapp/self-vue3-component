@@ -1,6 +1,12 @@
+let selfInstance = null;
+
 export const render = (vnode, container) => {
   patch(vnode, container);
 };
+
+export function getCurrentInstance()  {
+  return selfInstance
+}
 
 export const createNode = (type, props, children) => {
   const vnode = {
@@ -131,8 +137,10 @@ function setupStatefulComponent(instance) {
   );
   const setup = component.setup;
   if (setup) {
+    selfInstance = instance
     const setupResult = setup(instance.props, { emit: instance.emit });
     handleSetupResult(instance, setupResult);
+    selfInstance = null
   }
 }
 function handleSetupResult(instance, setupResult) {

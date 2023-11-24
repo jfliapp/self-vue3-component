@@ -1,6 +1,8 @@
-import { createNode as h } from "./vue";
+import { getCurrentInstance, createNode as h } from "./vue";
 const foo = {
   setup(props, { emit }) {
+    const self = getCurrentInstance()
+    console.log(self, "self")
     console.log(props, "setup --- > props");
     const emitAdd = () => {
       emit("add", "vue------emit");
@@ -16,13 +18,16 @@ const foo = {
     console.log(this.$slots, "$slots, ");
     return h("div", {}, [
       this.$slots["header"](this.msg),
-      h("p", null, "p"),
+      h("p", null, "p"), // 这个编译也是 this.$slots["default"]
       this.$slots["footer"],
     ]);
   },
 };
 export const app = {
   setup() {
+    const self = getCurrentInstance()
+    console.log(self, "self")
+    debugger
     return {
       msg: "vue3",
     };
