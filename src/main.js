@@ -8,7 +8,7 @@ function createApp(app) {
     mounted(container) {
       let vnode = createNode(app);
       let id = document.querySelector(container);
-      render(vnode, id)
+      render(vnode, id, null)
     },
   };
 }

@@ -1,11 +1,11 @@
 let selfInstance = null;
 
-export const render = (vnode, container) => {
+export const render = (vnode, container ) => {
   patch(vnode, container);
 };
 
-export function getCurrentInstance()  {
-  return selfInstance
+export function getCurrentInstance() {
+  return selfInstance;
 }
 
 export const createNode = (type, props, children) => {
@@ -18,16 +18,16 @@ export const createNode = (type, props, children) => {
   return vnode;
 };
 
-function patch(vnode, container) {
+function patch(vnode, container, parent) {
   const type = vnode.type;
   if (typeof type === "string") {
-    processElement(vnode, container);
+    processElement(vnode, container, parent);
   } else {
-    processComponent(vnode, container);
+    processComponent(vnode, container, parent);
   }
 }
 
-function processElement(vnode, container) {
+function processElement(vnode, container, parent) {
   const ele = document.createElement(vnode.type);
   vnode.el = ele;
   const child = vnode.children;
@@ -35,7 +35,7 @@ function processElement(vnode, container) {
     ele.textContent = child;
   } else if (Array.isArray(child)) {
     child.forEach((item) => {
-      patch(item, ele);
+      patch(item, ele, parent);
     });
   }
   const props = vnode.props;
@@ -49,27 +49,29 @@ function processElement(vnode, container) {
   }
   container.append(ele);
 }
-function processComponent(vnode, container) {
-  mountedComponent(vnode, container);
+function processComponent(vnode, container, parent) {
+  mountedComponent(vnode, container, parent);
 }
-function mountedComponent(vnode, container) {
-  const instance = createComponentInstance(vnode, container);
+function mountedComponent(vnode, container, parent) {
+  const instance = createComponentInstance(vnode, parent);
   setupComponent(instance);
   setupRenderEffect(instance, container);
 }
 function setupRenderEffect(instance, container) {
   const proxy = instance.proxy;
   const subTree = instance.render.call(proxy);
-  patch(subTree, container);
+  patch(subTree, container, instance);
   instance.vnode.el = subTree.el;
 }
-function createComponentInstance(vnode) {
+function createComponentInstance(vnode, parent) {
   const component = {
     vnode,
     type: vnode.type,
     setupResult: {},
     props: {},
     slots: {},
+    provides: parent ? parent.provides : {},
+    parent,
     emit: () => {},
   };
   component.emit = (name, args) => {
@@ -77,10 +79,28 @@ function createComponentInstance(vnode) {
     const handler = component.props[handlerName];
     handler(args);
   };
+
   return component;
 }
+export function provide(key, value) {
+  const self = getCurrentInstance();
+  if (self) {
+    let { provides } = self;
+    const parentProvides = self?.parent?.provides || {};
+    if (provides === parentProvides) {
+      provides = self.provides = Object.create(parentProvides);
+    }
+    provides[key] = value;
+  }
+}
+export function inject(key, defaultValue) {
+  const self = getCurrentInstance();
+  if (self) {
+    const { parent } = self;
+    return parent.provides[key] || defaultValue;
+  }
+}
 function setupComponent(instance) {
-  console.log(instance, "instance");
   initProps(instance, instance.vnode.props);
   initSlots(instance, instance.vnode.children);
   setupStatefulComponent(instance);
@@ -95,14 +115,12 @@ function initSlots(instance, children) {
   // 所以 这里就默认传进来的都是对象  这里就i默认做 作用域插槽了
   // 带有name的
   let slot = {};
-  console.log(children, "childre==========");
   // 这里需要注意 第一次app的时候他是没有 children的
   if (children) {
     Object.entries(children).forEach(([key, value]) => {
       slot[key] = value;
     });
   }
-  console.log(slot, "slot-------------initSlots");
   instance.slots = slot;
 }
 function setupStatefulComponent(instance) {
@@ -137,10 +155,10 @@ function setupStatefulComponent(instance) {
   );
   const setup = component.setup;
   if (setup) {
-    selfInstance = instance
+    selfInstance = instance;
     const setupResult = setup(instance.props, { emit: instance.emit });
     handleSetupResult(instance, setupResult);
-    selfInstance = null
+    selfInstance = null;
   }
 }
 function handleSetupResult(instance, setupResult) {
